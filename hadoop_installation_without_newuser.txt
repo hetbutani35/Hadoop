@@ -1,0 +1,164 @@
+===========================================================
+Hadoop multinode cluster Configuration steps (without user)
+===========================================================
+
+1. # sudo apt-get update
+-----------------------------------------------------------------------------------------------
+2. # sudo apt-get upgrade
+-----------------------------------------------------------------------------------------------
+3. Check java version
+   # java -version
+   
+   If not install then
+   # sudo apt install default-jdk default-jre -y
+
+   or
+   # sudo apt-get install openjdk-8-jdk
+-----------------------------------------------------------------------------------------------
+4. Download hadoop-3.3.1 from apache website OR
+   # wget https://downloads.apache.org/hadoop/common/hadoop-3.3.1/hadoop-3.3.1.tar.gz
+
+   Extract hadoop-3.3.1
+   # tar -xvf hadoop-3.3.1.tar.gz
+-----------------------------------------------------------------------------------------------
+5. Configure JAVA_HOME variable in hadoop-env.sh
+   # gedit hadoop-env.sh
+
+   Add this in the code
+
+   export JAVA_HOME={java folder path /usr/lib/jvm/}
+-----------------------------------------------------------------------------------------------
+6. Install ssh and pdsh
+   # sudo apt-get install ssh
+   # sudo apt-get install pdsh
+-----------------------------------------------------------------------------------------------
+7. Update environment variable in .bashrc file
+   # sudo gedit ~/.bashrc
+
+   Add this in the code
+
+   export JAVA_HOME={java folder path /usr/lib/jvm/}
+   export PDSH_RCMD_TYPE=ssh
+   export HADOOP_HOME={path where hadoop file extracted}
+   export HADOOP_INSTALL=$HADOOP_HOME
+   export HADOOP_MAPRED_HOME=$HADOOP_HOME
+   export HADOOP_COMMON_HOME=$HADOOP_HOME
+   export HADOOP_HDFS_HOME=$HADOOP_HOME
+   export HADOOP_YARN_HOME=$HADOOP_HOME
+   export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+   export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+   export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+
+   # source ~/.bashrc
+-----------------------------------------------------------------------------------------------
+8. ssh keygen for localhost
+   # ssh-keygen -t rsa
+   Create this file empty so "Enter" in all asked field
+
+   # cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+   # chmod 640 ~/.ssh/authorized_keys
+
+   Check localhost
+   type "yes" in the asked field because we generated the key
+   # ssh localhost
+-----------------------------------------------------------------------------------------------
+9. a) Change the hostname to the master
+      # sudo gedit /etc/hostname (on master node)
+      give name as master
+
+   b) Update the hosts table
+      # sudo gedit /etc/hosts (on master node)
+      ip address	master
+      ip address	slave1
+      ip address	slave2
+
+   Repeat a) and b) for slave machine, Here we take 2 slave machine so on each machine /etc/hosts configure with "master", "slave1" & "slave2" with respective ip addresses
+-----------------------------------------------------------------------------------------------
+10. copy ssh key to all machine (only on master node)
+    Don't configure the ssh-keygen for slave
+    # ssh-copy-id username@master
+    # ssh-copy-id username@slave1
+    # ssh-copy-id username@slave2
+-----------------------------------------------------------------------------------------------
+11. move to hadoop-3.3.1/etc/hadoop for configure various services (only on master node)
+    1) core-site.xml
+    
+       <configuration>
+       		<property>
+			<name>fs.defaultFS</name>
+			<value>hdfs://master:9000</value>
+       		</property>
+       </configuration>
+
+    2) mapred-site.xml
+
+       <configuration>
+       		<property>
+			<name>mapreduce.framework.name</name>
+			<value>yarn</value>
+		</property>
+       </configuration>
+
+    3) hdfs-site.xml
+
+       <configuration>
+       		<property>
+			<name>dfs.replication</name>
+			<value>2</value>
+		</property>
+
+		<property>
+			<name>dfs.namenode.name.dir</name>
+			<value>file:///{path of namenode folder}</value>
+       		</property>
+		
+		<property>
+			<name>dfs.datanode.data.dir</name>
+			<value>file:///{path of datanode folder}</value>
+       		</property>
+       </configuration>
+
+    4) yarn-site.xml
+
+       <configuration>
+       		<property>
+			<name>yarn.nodemanager.aux-services</name>
+			<value>mapreduce_shuffle</value>
+		</property>
+
+		<property>
+			<name>yarn.resourcemanager.hostname</name>
+			<value>master</value>
+       		</property>
+       </configuration>
+-----------------------------------------------------------------------------------------------
+12. Copy configuration files from master to all slave
+    # scp {path of hadoop-3.3.1/etc/hadoop} slave1:{path of hadoop-3.3.1/etc/hadoop on slave1}
+    # scp {path of hadoop-3.3.1/etc/hadoop} slave2:{path of hadoop-3.3.1/etc/hadoop on slave2}
+-----------------------------------------------------------------------------------------------
+13. source the environment variable
+    # source /etc/environment
+-----------------------------------------------------------------------------------------------
+14. # hdfs namenode -format
+    null file create:yes
+
+    (on master node)
+    # start-all.sh
+
+    If services started type "jps" it will show
+    # jps
+    -namenode
+    -secondarynamenode
+    -resourcemanager
+    -jps
+    on master machine and
+    # jps
+    -datanode
+    -nodemanager
+    -jps
+    on slave machine
+-----------------------------------------------------------------------------------------------
+15. check datanode running on slave using web
+    https://master:9870
+    https://master:8088
