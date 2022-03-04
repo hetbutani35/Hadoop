@@ -146,19 +146,11 @@ Hadoop multinode cluster Configuration steps (without user)
     (on master node)
     # start-all.sh
 
-    If services started type "jps" it will show
+    If services started type "jps" it will show running components
     # jps
-    -namenode
-    -secondarynamenode
-    -resourcemanager
-    -jps
-    on master machine and
-    # jps
-    -datanode
-    -nodemanager
-    -jps
-    on slave machine
 -----------------------------------------------------------------------------------------------
 15. check datanode running on slave using web
     https://master:9870
+
+    Check for cluster
     https://master:8088
